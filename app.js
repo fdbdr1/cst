@@ -27,7 +27,7 @@ function missingBodyElement (bodyElement) {
 
 app.post('/cst/meta', (req, res) => {
     console.log('[GET] ' + req.url + '\t' + JSON.stringify(req.body));
-    console.log(JSON.stringify(contentMeta));
+    // console.log(JSON.stringify(contentMeta));
     if(!req.body.id){
         res.status(404);
         res.write(missingBodyElement('Metadata ID'));
@@ -66,5 +66,68 @@ app.post('/cst/content', (req, res) => {
         res.send(JSON.stringify(resobj));
     };
 });
+
+function stringifyRawObject(o){
+    var propertyNames = Object.getOwnPropertyNames(o);
+    var elementscount = 0;
+    var returnstring= '';
+    returnstring='{\n';
+    for (p in propertyNames){
+        if(elementscount > 0){
+            returnstring = returnstring + ',\n'
+        }
+        elementscount++;
+        returnstring = returnstring + '\"' + propertyNames[p] + '\": '
+        returnstring = returnstring + stringifyRaw(o[propertyNames[p]]);
+    }
+    returnstring = returnstring + '\n}';
+    return returnstring;
+}
+
+function stringifyRawArray(o){
+    var returnstring= '';
+    returnstring = returnstring + '[';
+    if(o.length > 1){
+        returnstring = returnstring + '\n';
+    }
+    var elementscount=0;
+    for (e in o){
+        if (elementscount > 0){
+            returnstring = returnstring + ',\n'
+        }
+        elementscount++;
+        returnstring = returnstring + stringifyRaw(o[e]);
+    }
+    if(o.length > 1){
+        returnstring = returnstring + '\n';
+    }
+    returnstring = returnstring + ']';
+    return returnstring;
+}
+
+function stringifyRaw(o){
+    var returnstring = '';
+    switch (Object.getPrototypeOf(o)){
+        case null:
+            returnstring = null;
+            break;
+        case Object.getPrototypeOf(new Object()):
+            returnstring = stringifyRawObject(o);
+            break;
+        case Object.getPrototypeOf(new String()):
+            returnstring = returnstring + '\"' + o.replace(/\"/g, "\\\"").replace('\n', '\\n') + '\"';
+            break;
+        case Object.getPrototypeOf(new Number()):
+            returnstring = returnstring + o;
+            break;
+        case Object.getPrototypeOf(new Boolean()):
+            returnstring = returnstring + o;
+            break;
+        case Object.getPrototypeOf(new Array()):
+            returnstring = stringifyRawArray(o);
+            break;
+    }
+    return returnstring;
+}
 
 app.listen(PORT, () => {console.log(`listening on port ${PORT}...`)});
